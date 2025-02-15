@@ -2,9 +2,45 @@ import { twMerge } from "tailwind-merge";
 import { usePathFinding } from "../hooks/usePathfinding";
 import { MAX_COLS, MAX_ROWS } from "../utils/constants";
 import { Tile } from "./Tile";
+import { RefObject, useState } from "react";
+import { checkIfStartOrEnd, createNewGrid } from "../utils/helpers";
 
-const Grid = () => {
-  const { grid } = usePathFinding();
+const Grid = ({
+  isVisualizationRunningRef,
+}: {
+  isVisualizationRunningRef: RefObject<boolean>;
+}) => {
+  const { grid, setGrid } = usePathFinding();
+  const [isMouseDown, setIsMoudeDown] = useState(false);
+
+  const handleMouseDown = (row: number, col: number) => {
+    if (isVisualizationRunningRef.current || checkIfStartOrEnd(row, col)) {
+      return;
+    }
+
+    setIsMoudeDown(true);
+    const newGrid = createNewGrid(grid, row, col);
+    setGrid(newGrid);
+  };
+
+  const handleMouseUp = (row: number, col: number) => {
+    if (isVisualizationRunningRef.current || checkIfStartOrEnd(row, col)) {
+      return;
+    }
+
+    setIsMoudeDown(false);
+  };
+
+  const handleMouseEnter = (row: number, col: number) => {
+    if (isVisualizationRunningRef.current || checkIfStartOrEnd(row, col)) {
+      return;
+    }
+
+    if (isMouseDown) {
+      const newGrid = createNewGrid(grid, row, col);
+      setGrid(newGrid);
+    }
+  };
 
   return (
     <div
@@ -25,10 +61,11 @@ const Grid = () => {
         `
       )}
     >
-      {grid.map((row, rowIndex) => (
+      {grid.map((r, rowIndex) => (
         <div key={rowIndex} className="flex">
-          {row.map((tile, tileIndex) => {
-            const { isEnd, isStart, isPath, isTraversed, isWall } = tile;
+          {r.map((tile, tileIndex) => {
+            const { row, col, isEnd, isStart, isPath, isTraversed, isWall } =
+              tile;
             return (
               <Tile
                 key={tileIndex}
@@ -39,6 +76,9 @@ const Grid = () => {
                 isPath={isPath}
                 isTraversed={isTraversed}
                 isWall={isWall}
+                handleMouseDown={() => handleMouseDown(row, col)}
+                handleMouseUp={() => handleMouseUp(row, col)}
+                handleMouseEnter={() => handleMouseEnter(row, col)}
               />
             );
           })}
